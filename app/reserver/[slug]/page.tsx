@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { DAYS_FR, formatDateFR, formatTimeFR, formatDateShortFR } from '@/lib/utils';
+import { UserProfile, Availability, TimeSlot } from '@/lib/types';
 
 interface TimeSlotOption {
   date: Date;
@@ -13,7 +14,7 @@ export default function BookingPage() {
   const params = useParams();
   const slug = params.slug as string;
   
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [availableSlots, setAvailableSlots] = useState<TimeSlotOption[]>([]);
@@ -60,8 +61,13 @@ export default function BookingPage() {
     setSelectedDate(date);
     setSelectedSlot(null);
     
+    if (!user) {
+      setAvailableSlots([]);
+      return;
+    }
+    
     const dayOfWeek = date.getDay();
-    const availability = user?.availabilities?.find((a: any) => a.dayOfWeek === dayOfWeek);
+    const availability = user.availabilities?.find((a: Availability) => a.dayOfWeek === dayOfWeek);
     
     if (!availability) {
       setAvailableSlots([]);
@@ -70,7 +76,7 @@ export default function BookingPage() {
 
     const slots: TimeSlotOption[] = [];
     
-    availability.slots.forEach((slot: any) => {
+    availability.slots.forEach((slot: TimeSlot) => {
       const [startHour, startMin] = slot.start.split(':').map(Number);
       const [endHour, endMin] = slot.end.split(':').map(Number);
       
@@ -104,7 +110,7 @@ export default function BookingPage() {
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedSlot || !clientName || !clientEmail) {
+    if (!selectedSlot || !clientName || !clientEmail || !user) {
       setError('Veuillez remplir tous les champs');
       return;
     }
@@ -152,7 +158,7 @@ export default function BookingPage() {
     );
   }
 
-  if (bookingSuccess) {
+  if (bookingSuccess && user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white">
         <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
@@ -203,7 +209,7 @@ export default function BookingPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {getAvailableDates().map((date, idx) => {
                 const dayOfWeek = date.getDay();
-                const hasAvailability = user?.availabilities?.some((a: any) => a.dayOfWeek === dayOfWeek);
+                const hasAvailability = user?.availabilities?.some((a: Availability) => a.dayOfWeek === dayOfWeek);
                 
                 if (!hasAvailability) return null;
                 
