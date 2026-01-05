@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums for Account Tiers and Roles
+enum Plan {
+  FREE
+  PERSONAL
+  SMALL_BUSINESS
+  COMPANY
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  RESCHEDULED
+  PENDING
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  plan        Plan     @default(FREE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+}
+
+model User {
+  id             String       @id @default(uuid())
+  email          String       @unique
+  name           String
+  passwordHash   String
+  role           Role         @default(OWNER)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  
+  // Profile settings
+  bio            String?
+  avatarUrl      String?
+  language       String       @default("fr-CA") // fr-CA or en
+  timezone       String       @default("America/Toronto")
+
+  eventTypes     EventType[]
+  bookings       Booking[]    @relation("BookedUser") // Bookings assigned to this user
+  
+  availability   Availability[]
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model EventType {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   // Public URL slug
+  description String?
+  duration    Int      // in minutes
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  isActive    Boolean  @default(true)
+  color       String?  // Hex color for calendar
+  
+  bookings    Booking[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  startTime   DateTime
+  endTime     DateTime
+  status      BookingStatus @default(CONFIRMED)
+  
+  // Attendee Info
+  attendeeName  String
+  attendeeEmail String
+  notes         String?
+
+  eventTypeId String
+  eventType   EventType @relation(fields: [eventTypeId], references: [id])
+  
+  userId      String    // The staff member being booked
+  user        User      @relation("BookedUser", fields: [userId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Availability {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  dayOfWeek Int      // 0=Sunday, 1=Monday, etc.
+  startTime String   // "09:00"
+  endTime   String   // "17:00"
+  
+  isOverride Boolean @default(false) // If true, applies to specific date only
+  specificDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

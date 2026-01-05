@@ -1,0 +1,18 @@
+{
+  "app": {
+    "name": "Planexa",
+    "description": "La plateforme de planification pour le Québec"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "back": "Retour"
+  },
+  "auth": {
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "email": "Courriel",
+    "password": "Mot de passe"
+  }
+}

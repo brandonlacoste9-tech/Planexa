@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Default Light Mode */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --text-primary: #213547;
+  --text-secondary: #4b5563;
+  --accent-color: #2563eb;
+  --border-color: #e5e7eb;
+  
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme='dark'] {
+  --bg-primary: #1e293b;
+  --bg-secondary: #0f172a;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --accent-color: #3b82f6;
+  --border-color: #334155;
+}
+
+[data-theme='midnight'] {
+  --bg-primary: #020617;
+  --bg-secondary: #0f172a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #64748b;
+  --accent-color: #00ff9d;
+  --border-color: #1e293b;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom Calendar Overrides for Premium Feel */
+.rbc-calendar {
+  font-family: 'Inter', sans-serif;
+  color: var(--text-secondary);
+}
+
+.rbc-toolbar button {
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.rbc-toolbar button:hover {
+  background: var(--bg-primary);
+  border-color: var(--text-secondary);
+  transform: translateY(-1px);
+}
+
+.rbc-month-view, .rbc-time-view {
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rbc-header {
+  border-bottom: 2px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 16px 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85em;
+}
+
+.rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid var(--border-color);
+}
+
+.rbc-month-row + .rbc-month-row {
+  border-top: 1px solid var(--border-color);
+}
+
+.rbc-today {
+  background: #eff6ff;
+}
+
+.rbc-event {
+  background-color: #2563eb;
+  border-radius: 6px;
+  border: none;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  padding: 4px 8px;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.rbc-event:hover {
+  transform: scale(1.02);
+  z-index: 10;
+}
