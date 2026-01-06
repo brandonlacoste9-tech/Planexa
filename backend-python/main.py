@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 # Frameworks
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 # Database
@@ -15,8 +15,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from openai import OpenAI
 
 # --- Configuration ---
-# User provided DeepSeek Key in previous context
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "sk-d3ea36d7de48465e9097e50fb5534ab1")
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DATABASE_URL = os.environ.get("DATABASE_URL") 
 
 # --- Logging ---
@@ -89,6 +88,9 @@ async def generate_plan(request: PlanRequest):
     
     logger.info(f"Request from {user_id}")
 
+    if not client:
+        raise HTTPException(status_code=503, detail="AI Service Not Configured (Missing Key)")
+
     db = SessionLocal() if SessionLocal else None
     
     # 1. Context Retrieval
@@ -108,6 +110,7 @@ async def generate_plan(request: PlanRequest):
             history_text = "\n".join([f"{h.role}: {h.text}" for h in sorted(history, key=lambda x: x.timestamp)])
         except Exception as e:
             logger.error(f"DB Read Error: {e}")
+            # Non-critical, continue without history/context
     
     # 2. DeepSeek Prompt
     system_prompt = f"""
@@ -126,21 +129,20 @@ Instructions:
 """
 
     # 3. Call DeepSeek
-    response_text = "AI Unavailable"
-    if client:
-        try:
-            response = client.chat.completions.create(
-                model="deepseek-chat",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": query},
-                ],
-                stream=False
-            )
-            response_text = response.choices[0].message.content
-        except Exception as e:
-            logger.error(f"DeepSeek Error: {e}")
-            response_text = f"AI Error: {str(e)[:50]}"
+    response_text = ""
+    try:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": query},
+            ],
+            stream=False
+        )
+        response_text = response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"DeepSeek Error: {e}")
+        raise HTTPException(status_code=502, detail=f"AI Provider Error: {str(e)}")
 
     # 4. Save
     if db:
