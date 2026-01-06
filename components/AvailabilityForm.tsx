@@ -27,16 +27,24 @@ export default function AvailabilityForm({ userId, existingAvailabilities }: Ava
   const handleAdd = async () => {
     setIsSubmitting(true)
     try {
+      // In a real app, this token would come from a context or hook
+      const token = 'mock-token'; 
+      
       const response = await fetch('/api/availability', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newAvailability, userId })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ...newAvailability }) // userId is now derived from token
       })
       
       if (response.ok) {
         const created = await response.json()
         setAvailabilities([...availabilities, created])
         setNewAvailability({ dayOfWeek: 1, startTime: '09:00', endTime: '17:00' })
+      } else {
+        console.error('Failed to add availability:', await response.text());
       }
     } catch (error) {
       console.error('Erreur lors de l\'ajout:', error)
@@ -47,12 +55,18 @@ export default function AvailabilityForm({ userId, existingAvailabilities }: Ava
 
   const handleDelete = async (id: string) => {
     try {
+      const token = 'mock-token';
       const response = await fetch(`/api/availability?id=${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
       })
       
       if (response.ok) {
         setAvailabilities(availabilities.filter(a => a.id !== id))
+      } else {
+         console.error('Failed to delete availability:', await response.text());
       }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error)

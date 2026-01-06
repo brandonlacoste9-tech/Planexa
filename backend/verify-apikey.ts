@@ -1,11 +1,18 @@
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import dotenv from 'dotenv';
 
-// API Key provided by user
-const API_KEY = "AQ.Ab8RN6JbH58Xv69FNXdQKMLFaVBEMHHayM2rp2b82uYMh1guaQ";
+// Load env vars if running standalone
+dotenv.config();
+
+const API_KEY = process.env.GOOGLE_API_KEY;
+
+if (!API_KEY) {
+    console.error('❌ Error: GOOGLE_API_KEY environment variable is missing.');
+    process.exit(1);
+}
 
 async function main() {
-    const genAI = new GoogleGenerativeAI(API_KEY);
+    const genAI = new GoogleGenerativeAI(API_KEY as string);
     console.log('Testing Gemini API Key...');
 
     try {

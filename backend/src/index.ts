@@ -1,13 +1,19 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import { config, validateEnv } from './config';
 import publicRoutes from './routes/public';
 import smsRoutes from './routes/sms';
 
-dotenv.config();
+// Validate environment variables early
+try {
+  validateEnv();
+} catch (error: any) {
+  console.error('❌ Configuration Error:', error.message);
+  process.exit(1);
+}
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = config.port;
 
 app.use(cors());
 app.use(express.json());
