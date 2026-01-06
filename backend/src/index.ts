@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import publicRoutes from './routes/public';
 import smsRoutes from './routes/sms';
+import setupRoutes from './routes/setup';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', publicRoutes);
 app.use('/api/sms', smsRoutes);
+app.use('/api/setup', setupRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Bienvenue sur l\'API de Planexa v2.0' });
