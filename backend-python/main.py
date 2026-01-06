@@ -16,8 +16,13 @@ from openai import OpenAI
 
 # --- Configuration ---
 # User provided DeepSeek Key in previous context
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "sk-d3ea36d7de48465e9097e50fb5534ab1")
-DATABASE_URL = os.environ.get("DATABASE_URL") 
+if "DEEPSEEK_API_KEY" not in os.environ:
+    raise ValueError("DEEPSEEK_API_KEY environment variable is required")
+DEEPSEEK_API_KEY = os.environ["DEEPSEEK_API_KEY"]
+
+if "DATABASE_URL" not in os.environ:
+    raise ValueError("DATABASE_URL environment variable is required")
+DATABASE_URL = os.environ["DATABASE_URL"] 
 
 # --- Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -45,28 +50,26 @@ class EventType(Base):
 engine = None
 SessionLocal = None
 
-if DATABASE_URL:
-    try:
-        engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database connected.")
-    except Exception as e:
-        logger.error(f"Database connection failed: {e}")
-else:
-    logger.warning("DATABASE_URL not set. Running in-memory.")
+try:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database connected.")
+except Exception as e:
+    logger.error(f"Database connection failed: {e}")
+    raise e
 
 # --- DeepSeek Client Setup ---
 client = None
-if DEEPSEEK_API_KEY:
-    try:
-        client = OpenAI(
-            api_key=DEEPSEEK_API_KEY, 
-            base_url="https://api.deepseek.com"
-        )
-        logger.info("DeepSeek Client Initialized")
-    except Exception as e:
-        logger.error(f"DeepSeek Init Failed: {e}")
+try:
+    client = OpenAI(
+        api_key=DEEPSEEK_API_KEY, 
+        base_url="https://api.deepseek.com"
+    )
+    logger.info("DeepSeek Client Initialized")
+except Exception as e:
+    logger.error(f"DeepSeek Init Failed: {e}")
+    raise e
 
 # --- FastAPI App ---
 app = FastAPI(title="Planexa DeepSeek Monolith")
