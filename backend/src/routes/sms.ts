@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { VertexAI } from '@google-cloud/vertexai';
 import prisma from '../lib/prisma';
+import twilio from 'twilio';
+import { config } from '../config';
 
 const router = Router();
 
-// Configuration for Vertex AI (using Cloud Run Service Account Identity)
-const PROJECT_ID = 'unique-spirit-482300-s4';
-const LOCATION = 'us-central1';
+// Configuration for Vertex AI
+const PROJECT_ID = config.vertexProjectId;
+const LOCATION = config.vertexLocation;
 
 const vertexAI = new VertexAI({
     project: PROJECT_ID,
@@ -14,7 +16,6 @@ const vertexAI = new VertexAI({
 });
 
 // Using the stable Gemini 1.5 Flash 002 model
-// This model is generally available and efficient for SMS use cases.
 const model = vertexAI.getGenerativeModel({
     model: 'gemini-1.5-flash-002', 
     generationConfig: {
@@ -28,9 +29,38 @@ const conversationStore: Record<string, { role: string; text: string }[]> = {};
 
 router.post('/webhook', async (req, res) => {
     try {
+        // Twilio Signature Validation
+        const twilioSignature = req.headers['x-twilio-signature'] as string;
+        // In production, use the configured public URL. In dev, fallback to host.
+        // You MUST set WEBHOOK_BASE_URL in production.
+        const baseUrl = process.env.WEBHOOK_BASE_URL || `https://${req.headers.host}`;
+        const url = `${baseUrl}${req.originalUrl}`;
+        const params = req.body;
+
+        // Skip validation if explicitly disabled (ONLY for local dev without ngrok)
+        const skipValidation = process.env.SKIP_TWILIO_VALIDATION === 'true';
+
+        if (!skipValidation) {
+            if (!config.twilioAuthToken) {
+                 console.error('Missing TWILIO_AUTH_TOKEN for signature validation');
+                 return res.status(500).send('Server Misconfiguration');
+            }
+
+            const isValid = twilio.validateRequest(
+                config.twilioAuthToken,
+                twilioSignature,
+                url,
+                params
+            );
+
+            if (!isValid) {
+                console.warn(`[Security] Invalid Twilio Signature. URL: ${url}`);
+                return res.status(403).send('Forbidden: Invalid Twilio Signature');
+            }
+        }
+
         const { From, Body } = req.body;
         console.log(`[Planexa SMS] Incoming from ${From}: ${Body}`);
-        console.log(`[Planexa SMS] Using Vertex AI Project: ${PROJECT_ID}, Location: ${LOCATION}`);
 
         if (!conversationStore[From]) {
             conversationStore[From] = [];
