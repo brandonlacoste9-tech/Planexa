@@ -23,27 +23,45 @@ const model = vertexAI.getGenerativeModel({
     }
 });
 
-// Simple in-memory conversation store for the demo
-const conversationStore: Record<string, { role: string; text: string }[]> = {};
-
 router.post('/webhook', async (req, res) => {
     try {
         const { From, Body } = req.body;
         console.log(`[Planexa SMS] Incoming from ${From}: ${Body}`);
         console.log(`[Planexa SMS] Using Vertex AI Project: ${PROJECT_ID}, Location: ${LOCATION}`);
 
-        if (!conversationStore[From]) {
-            conversationStore[From] = [];
-        }
+        // 1. Log Incoming Message
+        await prisma.smsLog.create({
+            data: {
+                phoneNumber: From,
+                message: Body,
+                direction: 'INBOUND',
+                status: 'received'
+            }
+        });
 
-        // Fetch services from DB
+        // 2. Fetch Conversation History (Last 10 messages)
+        const history = await prisma.smsLog.findMany({
+            where: { phoneNumber: From },
+            orderBy: { createdAt: 'desc' },
+            take: 10
+        });
+
+        // Reverse to chronological order
+        const conversationHistory = history.reverse();
+
+        // 3. Fetch services from DB
         const eventTypes = await prisma.eventType.findMany({
             where: { isActive: true },
             select: { title: true, duration: true }
         });
 
         const servicesList = eventTypes.map(e => `- ${e.title} (${e.duration} min)`).join('\n');
-        const historyText = conversationStore[From].map(m => `${m.role}: ${m.text}`).join('\n');
+        
+        // Format history for prompt
+        const historyText = conversationHistory.map(m => {
+             const role = m.direction === 'INBOUND' ? 'User' : 'Assistant';
+             return `${role}: ${m.message}`;
+        }).join('\n');
         
         const systemInstruction = `
 You are a bilingual medical receptionist assistant for "Clinique Planexa" in Quebec.
@@ -68,8 +86,15 @@ ${servicesList}
 
         console.log(`[Planexa SMS] AI Response: ${aiResponseText}`);
 
-        conversationStore[From].push({ role: 'User', text: Body });
-        conversationStore[From].push({ role: 'Assistant', text: aiResponseText });
+        // 4. Log Outgoing Message
+        await prisma.smsLog.create({
+            data: {
+                phoneNumber: From,
+                message: aiResponseText,
+                direction: 'OUTBOUND',
+                status: 'sent'
+            }
+        });
 
         res.type('text/xml');
         res.send(`<Response><Message>${aiResponseText}</Message></Response>`);
