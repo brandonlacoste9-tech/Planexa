@@ -29,8 +29,8 @@ const conversationStore: Record<string, { role: string; text: string }[]> = {};
 router.post('/webhook', async (req, res) => {
     try {
         const { From, Body } = req.body;
-        console.log(`[Planexa SMS] Incoming from ${From}: ${Body}`);
-        console.log(`[Planexa SMS] Using Vertex AI Project: ${PROJECT_ID}, Location: ${LOCATION}`);
+        console.log(`[Planexo SMS] Message entrant de ${From}: ${Body}`);
+        console.log(`[Planexo SMS] Utilisation de Vertex AI - Projet: ${PROJECT_ID}, Région: ${LOCATION}`);
 
         if (!conversationStore[From]) {
             conversationStore[From] = [];
@@ -42,16 +42,18 @@ router.post('/webhook', async (req, res) => {
             select: { title: true, duration: true }
         });
 
-        const servicesList = eventTypes.map(e => `- ${e.title} (${e.duration} min)`).join('\n');
+        const servicesList = eventTypes.map((e: { title: string; duration: number }) => `- ${e.title} (${e.duration} min)`).join('\n');
         const historyText = conversationStore[From].map(m => `${m.role}: ${m.text}`).join('\n');
         
         const systemInstruction = `
-You are a bilingual medical receptionist assistant for "Clinique Planexa" in Quebec.
-Rules:
-- Max 160 characters.
-- Detect language (FR/EN) and reply in the same language.
-- Suggest tomorrow 10am or 2pm.
-- Be polite and professional.
+Tu es un assistant réceptionniste bilingue pour "Clinique Planexo" au Québec.
+Règles:
+- Maximum 160 caractères.
+- Détecte la langue (FR/EN) et réponds dans la même langue.
+- Propose demain 10h ou 14h.
+- Sois poli et professionnel.
+- Utilise le français québécois naturel (pas de "vous", utilise "tu").
+- Sois chaleureux et accueillant, comme un vrai Québécois.
 
 Services:
 ${servicesList}
@@ -59,14 +61,14 @@ ${servicesList}
 
         const fullPrompt = `${systemInstruction}\n\nHistory:\n${historyText}\nUser: ${Body}\nAssistant:`;
 
-        console.log('[Planexa SMS] Generating content...');
+        console.log('[Planexo SMS] Génération de la réponse...');
         const result = await model.generateContent(fullPrompt);
         const responseData = await result.response;
         
         const aiResponseText = responseData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 
-            "Désolé, je ne comprends pas.";
+            "Désolé, j'ai pas compris. Peux-tu réessayer?";
 
-        console.log(`[Planexa SMS] AI Response: ${aiResponseText}`);
+        console.log(`[Planexo SMS] AI Response: ${aiResponseText}`);
 
         conversationStore[From].push({ role: 'User', text: Body });
         conversationStore[From].push({ role: 'Assistant', text: aiResponseText });
@@ -75,11 +77,10 @@ ${servicesList}
         res.send(`<Response><Message>${aiResponseText}</Message></Response>`);
 
     } catch (error: any) {
-        console.error('[Planexa SMS Critical Error]:', error);
+        console.error('[Planexo SMS - Erreur critique]:', error);
         // Clean error message for response
-        const errMsg = error.message || "Unknown Error";
         res.type('text/xml');
-        res.send(`<Response><Message>Erreur Système: ${errMsg.substring(0, 50)}</Message></Response>`);
+        res.send(`<Response><Message>Désolé, il y a eu une erreur. On s'en occupe!</Message></Response>`);
     }
 });
 

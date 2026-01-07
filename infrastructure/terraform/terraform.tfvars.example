@@ -1,0 +1,31 @@
+# ============================================================================
+# PLANEXA - Terraform Variables
+# Copy this file to terraform.tfvars and fill in your values
+# ============================================================================
+
+# Google Cloud Project ID (required)
+project_id = "your-gcp-project-id"
+
+# Region (default: Montreal)
+region = "northamerica-northeast1"
+
+# Environment
+environment = "prod"
+
+# Custom domain
+domain = "planexo.ca"
+
+# MongoDB Atlas connection string (required)
+# Get this from MongoDB Atlas dashboard
+mongodb_connection_string = "mongodb+srv://username:password@cluster.mongodb.net/planexa?retryWrites=true&w=majority"
+
+# JWT Secret for authentication (required)
+# Generate with: openssl rand -base64 32
+jwt_secret = "your-secure-jwt-secret-here"
+
+# Google API Key (for Gemini AI)
+google_api_key = "AIzaSyBeCTCYPbJr0SjBH1qTStJVntFBpkUzmvM"
+
+# Twilio credentials (optional - can add later)
+twilio_account_sid = ""
+twilio_auth_token  = ""
