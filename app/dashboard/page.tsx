@@ -4,6 +4,8 @@ import AvailabilityForm from '@/components/AvailabilityForm'
 import BookingsList from '@/components/BookingsList'
 import CopyButton from '@/components/CopyButton'
 
+export const dynamic = 'force-dynamic';
+
 const DEFAULT_USER_ID = 'demo-user'
 
 async function getOrCreateUser() {
