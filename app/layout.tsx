@@ -13,6 +13,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr-CA">
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet" />
+      </head>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );
